@@ -1,57 +1,55 @@
 #pragma once
 
-#include"Stack.h"
-#include"LinkList.h"
+#include "Stack.h"
+#include "LinkList.h"
 
 namespace JYLib
 {
 
-template <typename T>
-class LinkStack : public Stack<T>
-{
-protected:
-    LinkList<T> m_list;
-
-public:
-    void push(const T& e)
+    template < typename T >
+    class LinkStack : public Stack<T>
     {
-        m_list.insert(0,e);
-    }
-
-    void pop()
-    {
-        if(m_list.length() > 0)
+    protected:
+        LinkList<T> m_list;
+    public:
+        void push(const T& e)  // O(1)
         {
-            m_list.remove(0);
+            m_list.insert(0, e);
         }
-        else
+
+        void pop()   // O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The LinkStack has no elements...");
+            if (m_list.length() > 0)
+            {
+                m_list.remove(0);
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current stack ...");
+            }
         }
-    }
 
-    T top() const
-    {
-        if(m_list.length() > 0)
+        T top() const  // O(1)
         {
-            return m_list.get(0);
+            if (m_list.length() > 0)
+            {
+                return m_list.get(0);
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current stack ...");
+            }
         }
-        else
+
+        void clear()  // O(n)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The LinkStack has no elements...");
+            m_list.clear();
         }
-    }
 
-    void clear()
-    {
-        m_list.clear();
-    }
-
-    int size() const
-    {
-        return m_list.length();
-    }
-
-};
+        int size() const  // O(1)
+        {
+            return m_list.length();
+        }
+    };
 
 }

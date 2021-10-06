@@ -1,26 +1,29 @@
 #pragma once
 
-#include"LinkList.h"
-#include"TreeNode.h"
+#include "TreeNode.h"
+#include "LinkList.h"
 
 namespace JYLib
 {
 
-template <typename T>
-class GTreeNode : public TreeNode<T>
-{
-public:
-    LinkList<GTreeNode<T>*> child;
-
-    static GTreeNode<T>* NewNode()
+    template < typename T >
+    class GTreeNode : public TreeNode<T>
     {
-        GTreeNode<T>* ret = new GTreeNode();
-        if(ret != NULL)
+    public:
+        LinkList<GTreeNode<T>*> child;
+
+        static GTreeNode<T>* NewNode()
         {
-            ret->m_flag = true;
+            GTreeNode<T>* ret = new GTreeNode<T>();
+
+            if (ret != NULL)
+            {
+                ret->m_flag = true;
+            }
+
+            return ret;
         }
-        return ret;
-    }
-};
+    };
+
 
 }

@@ -1,40 +1,41 @@
 #pragma once
 
-#include"TreeNode.h"
+#include "TreeNode.h"
 
 namespace JYLib
 {
 
-enum BTreeNodePos
-{
-    ANY,
-    LEFT,
-    RIGHT
-};
-
-template <typename T>
-class BTreeNode : public TreeNode<T>
-{
-public:
-    BTreeNode<T>* left;
-    BTreeNode<T>* right;
-
-    BTreeNode()
+    enum BTNodePos
     {
-        left = NULL;
-        right = NULL;
-    }
+        ANY,
+        LEFT,
+        RIGHT
+    };
 
-    static BTreeNode<T>* NewNode()
+    template < typename T >
+    class BTreeNode : public TreeNode<T>
     {
+    public:
+        BTreeNode<T>* left;
+        BTreeNode<T>* right;
 
-        BTreeNode<T>* ret = new BTreeNode();
-        if(ret != NULL)
+        BTreeNode()
         {
-            ret->m_flag = true;
+            left = NULL;
+            right = NULL;
         }
-        return ret;
-    }
-};
+
+        static BTreeNode<T>* NewNode()
+        {
+            BTreeNode<T>* ret = new BTreeNode<T>();
+
+            if (ret != NULL)
+            {
+                ret->m_flag = true;
+            }
+
+            return ret;
+        }
+    };
 
 }

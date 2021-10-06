@@ -1,50 +1,50 @@
 #pragma once
 
-#include<cstdlib>
-#include"Object.h"
+#include "Object.h"
 
 namespace JYLib
 {
-	template<typename T>
-	class Pointer : public Object
-	{
-	protected:
-		T* m_pointer;
 
-	public:
-		Pointer(T* p = NULL)
-		{
-			this->m_pointer = p;
-		}
-
-		T& operator *()
-		{
-            return (*m_pointer);
-		}
-
-		T* operator ->()
-		{
-			return this->m_pointer;
-		}
-
-        const T& operator *() const
+    template < typename T >
+    class Pointer : public Object
+    {
+    protected:
+        T* m_pointer;
+    public:
+        Pointer(T* p = NULL)
         {
-            return (*this);
+            m_pointer = p;
         }
 
-        const T* operator ->() const
+        T* operator-> ()
         {
-            return this->m_pointer;
+            return m_pointer;
+        }
+
+        const T& operator* () const
+        {
+            return *m_pointer;
+        }
+
+        const T* operator-> () const
+        {
+            return m_pointer;
+        }
+
+        T& operator* ()
+        {
+            return *m_pointer;
         }
 
         bool isNull() const
-		{
-			return (this->m_pointer == NULL);
-		}
+        {
+            return (m_pointer == NULL);
+        }
 
         T* get() const
-		{
-			return m_pointer;
-		}
-	};
+        {
+            return m_pointer;
+        }
+    };
+
 }

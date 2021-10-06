@@ -1,132 +1,138 @@
 #pragma once
 
-#include<cstring>
-#include<cstdlib>
-
-#include "Object.h"
+#include"Object.h"
 
 namespace JYLib
 {
-	#define THROW_EXCEPTION(e,m) throw e(m,__FILE__,__LINE__)
 
-	class Exception : public Object
-	{
-	protected:
-		char *m_message;
-		char *m_location;
+    #define THROW_EXCEPTION(e, m) (throw e(m, __FILE__, __LINE__))
 
-		void init(const char *message, const char *file, int line);
+    class Exception : public Object
+    {
+    protected:
+        char* m_message;
+        char* m_location;
 
-	public:
-		Exception(const char *message);
-		Exception(const char* file, int line);
-		Exception(const char *message, const char *file, int line);
+        void init(const char* message, const char* file, int line);
+    public:
+        Exception(const char* message);
+        Exception(const char* file, int line);
+        Exception(const char* message, const char* file, int line);
 
-		Exception(const Exception &obj);
+        Exception(const Exception& e);
+        Exception& operator= (const Exception& e);
 
-		Exception& operator=(const Exception& obj);
+        virtual const char* message() const;
+        virtual const char* location() const;
 
-		virtual ~Exception();
+        virtual ~Exception() = 0;
+    };
 
-		virtual const char* message() const;
-		virtual const char* location() const;
+    class ArithmeticException : public Exception
+    {
+    public:
+        ArithmeticException() : Exception(0) { }
+        ArithmeticException(const char* message) : Exception(message) { }
+        ArithmeticException(const char* file, int line) : Exception(file, line) { }
+        ArithmeticException(const char* message, const char* file, int line) : Exception(message, file, line) { }
 
-	};
+        ArithmeticException(const ArithmeticException& e) : Exception(e) { }
 
+        ArithmeticException& operator= (const ArithmeticException& e)
+        {
+            Exception::operator=(e);
 
-	class ArithmeticException :public Exception
-	{
-	public:
-		ArithmeticException() :Exception(NULL, NULL, 0) {}
-		ArithmeticException(const char *message) :Exception(message) {}
-		ArithmeticException(const char *file,int line):Exception(file,line){}
-		ArithmeticException(const char* message,const char* file,int line):Exception(message,file,line){}
+            return *this;
+        }
+    };
 
-		ArithmeticException(const ArithmeticException&obj):Exception(obj){}
-		ArithmeticException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+    class NullPointerException : public Exception
+    {
+    public:
+        NullPointerException() : Exception(0) { }
+        NullPointerException(const char* message) : Exception(message) { }
+        NullPointerException(const char* file, int line) : Exception(file, line) { }
+        NullPointerException(const char* message, const char* file, int line) : Exception(message, file, line) { }
 
-	class NullPointerException :public Exception
-	{
-	public:
-		NullPointerException() :Exception(NULL, NULL, 0) {}
-		NullPointerException(const char *message) :Exception(message) {}
-		NullPointerException(const char *file, int line) :Exception(file, line) {}
-		NullPointerException(const char* message, const char* file, int line) :Exception(message, file, line) {}
+        NullPointerException(const NullPointerException& e) : Exception(e) { }
 
-		NullPointerException(const ArithmeticException&obj) :Exception(obj) {}
-		NullPointerException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+        NullPointerException& operator= (const NullPointerException& e)
+        {
+            Exception::operator=(e);
 
-	class IndexOutOfBoundsException :public Exception
-	{
-	public:
-		IndexOutOfBoundsException() :Exception(NULL, NULL, 0) {}
-		IndexOutOfBoundsException(const char *message) :Exception(message) {}
-		IndexOutOfBoundsException(const char *file, int line) :Exception(file, line) {}
-		IndexOutOfBoundsException(const char* message, const char* file, int line) :Exception(message, file, line) {}
+            return *this;
+        }
+    };
 
-		IndexOutOfBoundsException(const ArithmeticException&obj) :Exception(obj) {}
-		IndexOutOfBoundsException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+    class IndexOutOfBoundsException : public Exception
+    {
+    public:
+        IndexOutOfBoundsException() : Exception(0) { }
+        IndexOutOfBoundsException(const char* message) : Exception(message) { }
+        IndexOutOfBoundsException(const char* file, int line) : Exception(file, line) { }
+        IndexOutOfBoundsException(const char* message, const char* file, int line) : Exception(message, file, line) { }
 
-	class NoEnoughMemoryException :public Exception
-	{
-	public:
-		NoEnoughMemoryException() :Exception(NULL, NULL, 0) {}
-		NoEnoughMemoryException(const char *message) :Exception(message) {}
-		NoEnoughMemoryException(const char *file, int line) :Exception(file, line) {}
-		NoEnoughMemoryException(const char* message, const char* file, int line) :Exception(message, file, line) {}
+        IndexOutOfBoundsException(const IndexOutOfBoundsException& e) : Exception(e) { }
 
-		NoEnoughMemoryException(const ArithmeticException&obj) :Exception(obj) {}
-		NoEnoughMemoryException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+        IndexOutOfBoundsException& operator= (const IndexOutOfBoundsException& e)
+        {
+            Exception::operator=(e);
 
-	class InvalidParamterException :public Exception
-	{
-	public:
-		InvalidParamterException() :Exception(NULL, NULL, 0) {}
-		InvalidParamterException(const char *message) :Exception(message) {}
-		InvalidParamterException(const char *file, int line) :Exception(file, line) {}
-		InvalidParamterException(const char* message, const char* file, int line) :Exception(message, file, line) {}
+            return *this;
+        }
+    };
 
-		InvalidParamterException(const ArithmeticException&obj) :Exception(obj) {}
-		InvalidParamterException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+    class NoEnoughMemoryException : public Exception
+    {
+    public:
+        NoEnoughMemoryException() : Exception(0) { }
+        NoEnoughMemoryException(const char* message) : Exception(message) { }
+        NoEnoughMemoryException(const char* file, int line) : Exception(file, line) { }
+        NoEnoughMemoryException(const char* message, const char* file, int line) : Exception(message, file, line) { }
 
-	class InvalidOperationException :public Exception
-	{
-	public:
-		InvalidOperationException() :Exception(NULL, NULL, 0) {}
-		InvalidOperationException(const char *message) :Exception(message) {}
-		InvalidOperationException(const char *file, int line) :Exception(file, line) {}
-		InvalidOperationException(const char* message, const char* file, int line) :Exception(message, file, line) {}
+        NoEnoughMemoryException(const NoEnoughMemoryException& e) : Exception(e) { }
 
-		InvalidOperationException(const ArithmeticException&obj) :Exception(obj) {}
-		InvalidOperationException& operator=(const ArithmeticException &obj)
-		{
-            Exception::operator=(obj);
-			return *this;
-		}
-	};
+        NoEnoughMemoryException& operator= (const NoEnoughMemoryException& e)
+        {
+            Exception::operator=(e);
+
+            return *this;
+        }
+    };
+
+    class InvalidParameterException : public Exception
+    {
+    public:
+        InvalidParameterException() : Exception(0) { }
+        InvalidParameterException(const char* message) : Exception(message) { }
+        InvalidParameterException(const char* file, int line) : Exception(file, line) { }
+        InvalidParameterException(const char* message, const char* file, int line) : Exception(message, file, line) { }
+
+        InvalidParameterException(const InvalidParameterException& e) : Exception(e) { }
+
+        InvalidParameterException& operator= (const InvalidParameterException& e)
+        {
+            Exception::operator=(e);
+
+            return *this;
+        }
+    };
+
+    class InvalidOperationException : public Exception
+    {
+    public:
+        InvalidOperationException() : Exception(0) { }
+        InvalidOperationException(const char* message) : Exception(message) { }
+        InvalidOperationException(const char* file, int line) : Exception(file, line) { }
+        InvalidOperationException(const char* message, const char* file, int line) : Exception(message, file, line) { }
+
+        InvalidOperationException(const InvalidOperationException& e) : Exception(e) { }
+
+        InvalidOperationException& operator= (const InvalidOperationException& e)
+        {
+            Exception::operator=(e);
+
+            return *this;
+        }
+    };
 }

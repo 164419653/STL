@@ -1,579 +1,711 @@
 #pragma once
 
-#include"Tree.h"
-#include"BTreeNode.h"
-#include"Exception.h"
-#include"LinkQueue.h"
-#include"DynamicArray.h"
+#include "Tree.h"
+#include "BTreeNode.h"
+#include "Exception.h"
+#include "LinkQueue.h"
+#include "DynamicArray.h"
 
 namespace JYLib
 {
 
-enum BTTraversal
-{
-    PreOrder,
-    InOrder,
-    PostOrder
-};
-
-template <typename T>
-class BTree : public Tree<T>
-{
-protected:
-    LinkQueue<BTreeNode<T>*> m_queue;
-    virtual BTreeNode<T>* find(BTreeNode<T>* node,const T& value) const
+    enum BTTraversal
     {
-        BTreeNode<T>* ret = NULL;
+        PreOrder,
+        InOrder,
+        PostOrder,
+        LevelOrder
+    };
 
-        if(node != NULL)
+    template < typename T >
+    class BTree : public Tree<T>
+    {
+    protected:
+        LinkQueue<BTreeNode<T>*> m_queue;
+
+        virtual BTreeNode<T>* find(BTreeNode<T>* node, const T& value) const
         {
-            if(node->value == value)
+            BTreeNode<T>* ret = NULL;
+
+            if (node != NULL)
+            {
+                if (node->value == value)
+                {
+                    ret = node;
+                }
+                else
+                {
+                    if (ret == NULL)
+                    {
+                        ret = find(node->left, value);
+                    }
+
+                    if (ret == NULL)
+                    {
+                        ret = find(node->right, value);
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        virtual BTreeNode<T>* find(BTreeNode<T>* node, BTreeNode<T>* obj) const
+        {
+            BTreeNode<T>* ret = NULL;
+
+            if (node == obj)
             {
                 ret = node;
             }
             else
             {
-                ret = find(node->left,value);
-                if(ret == NULL)
+                if (node != NULL)
                 {
-                    ret = find(node->right,value);
+                    if (ret == NULL)
+                    {
+                        ret = find(node->left, obj);
+                    }
+
+                    if (ret == NULL)
+                    {
+                        ret = find(node->right, obj);
+                    }
                 }
             }
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    virtual BTreeNode<T>* find(BTreeNode<T>* node,BTreeNode<T>* obj) const
-    {
-        BTreeNode<T>* ret = NULL;
-
-        if(node == obj)
+        virtual bool insert(BTreeNode<T>* n, BTreeNode<T>* np, BTNodePos pos)
         {
-            ret = node;
-        }
-        else
-        {
-            if(node != NULL)
+            bool ret = true;
+
+            if (pos == ANY)
             {
-                ret = find(node->left,obj);
-                if(ret == NULL)
+                if (np->left == NULL)
                 {
-                    ret = find(node->right,obj);
+                    np->left = n;
+                }
+                else if (np->right == NULL)
+                {
+                    np->right = n;
+                }
+                else
+                {
+                    ret = false;
                 }
             }
-        }
-
-        return ret;
-    }
-
-    virtual bool insert(BTreeNode<T>* n,BTreeNode<T>* np,BTreeNodePos pos)
-    {
-        bool ret = true;
-
-        if(pos == ANY)
-        {
-            if(np->left == NULL)
+            else if (pos == LEFT)
             {
-                np->left = n;
+                if (np->left == NULL)
+                {
+                    np->left = n;
+                }
+                else
+                {
+                    ret = false;
+                }
             }
-            else if(np->right == NULL)
+            else if (pos == RIGHT)
             {
-                np->right = n;
+                if (np->right == NULL)
+                {
+                    np->right = n;
+                }
+                else
+                {
+                    ret = false;
+                }
             }
             else
             {
                 ret = false;
             }
+
+            return ret;
         }
-        else if(pos == LEFT)
+
+        virtual void remove(BTreeNode<T>* node, BTree<T>*& ret)
         {
-           if(np->left == NULL)
-           {
-               np->left = n;
-           }
-           else
-           {
-               ret = false;
-           }
-        }
-        else if(pos == RIGHT)
-        {
-            if(np->right == NULL)
+            ret = new BTree<T>();
+
+            if (ret == NULL)
             {
-                np->right = n;
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new tree ...");
             }
             else
             {
-                ret = false;
-            }
-        }
-        else
-        {
-            ret = false;
-        }
-
-        return ret;
-    }
-
-
-    virtual void remove(BTreeNode<T>* node,BTree<T>*& ret)
-    {
-        ret = new BTree<T>();
-        if(ret == NULL)
-        {
-            THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new Tree ...");
-        }
-        else
-        {
-            if(root() == node)
-            {
-                this->m_root = NULL;
-            }
-            else
-            {
-                BTreeNode<T>* parent = dynamic_cast<BTreeNode<T>*>(node->parent);
-                if(parent->left == node)
+                if (root() == node)
                 {
-                    parent->left = NULL;
+                    this->m_root = NULL;
                 }
                 else
                 {
-                    parent->right = NULL;
-                }
-                node->parent = NULL;
-            }
-            ret->m_root = node;
-            m_queue.clear();
-        }
-    }
+                    BTreeNode<T>* parent = dynamic_cast<BTreeNode<T>*>(node->parent);
 
-    virtual void clear(BTreeNode<T>* node)
-    {
-        if(node != NULL)
-        {
-            clear(node->left);
-            clear(node->right);
+                    if (parent->left == node)
+                    {
+                        parent->left = NULL;
+                    }
+                    else if (parent->right == node)
+                    {
+                        parent->right = NULL;
+                    }
 
-            if(node->flag())
-            {
-                delete node;
-            }
-        }
-    }
-
-    int count(BTreeNode<T>* node) const
-    {
-        return (node != NULL) ? count(node->left) + count(node->right)+1 : 0;
-    }
-
-    int height(BTreeNode<T>* node) const
-    {
-        int ret = 0;
-
-        if(node != NULL)
-        {
-            int lh = height(node->left);
-            int rh = height(node->right);
-
-            ret = lh > rh ? lh+1 : rh+1;
-        }
-
-        return ret;
-    }
-
-    int degree(BTreeNode<T>* node) const
-    {
-        int ret = 0;
-
-        if(node != NULL)
-        {
-            ret = !!(node->left) + !!(node->right);
-            if(ret == 1 )
-            {
-                int ld = degree(node->left);
-                ret = ret > ld ? ret : ld;
-            }
-            if(ret == 1)
-            {
-                int rd = degree(node->right);
-                ret = ret > rd ? ret : rd;
-            }
-        }
-        return ret;
-    }
-
-    void preOrder(BTreeNode<T>* node,LinkQueue<BTreeNode<T>*> &queue)
-    {
-        if(node != NULL)
-        {
-            queue.add(node);
-            preOrder(node->left,queue);
-            preOrder(node->right,queue);
-        }
-    }
-
-    void inOrder(BTreeNode<T>* node,LinkQueue<BTreeNode<T>*> &queue)
-    {
-        if(node != NULL)
-        {
-            inOrder(node->left,queue);
-            queue.add(node);
-            inOrder(node->right,queue);
-        }
-    }
-
-    void postOrder(BTreeNode<T>* node,LinkQueue<BTreeNode<T>*> &queue)
-    {
-        if(node != NULL)
-        {
-            postOrder(node->left,queue);
-            postOrder(node->right,queue);
-            queue.add(node);
-        }
-    }
-
-    BTreeNode<T>* clone(BTreeNode<T>* node) const
-    {
-        BTreeNode<T>* ret = NULL;
-
-        if(node != NULL)
-        {
-            ret = BTreeNode<T>::NewNode();
-            if(ret != NULL)
-            {
-                ret->value = node->value;
-                ret->left = clone(node->left);
-                ret->right = clone(node->right);
-
-                if(ret->left != NULL)
-                {
-                    ret->left->parent = ret;
-                }
-                if(ret->right != NULL)
-                {
-                    ret->right->parent = ret;
-                }
-            }
-            else
-            {
-                THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new node ...");
-            }
-        }
-
-        return ret;
-    }
-
-    bool equal(BTreeNode<T>* lh,BTreeNode<T>* rh) const
-    {
-        if(lh == rh)
-        {
-            return true;
-        }
-        else if((lh != NULL) && (rh != NULL))
-        {
-            return (lh->value==rh->value) && equal(lh->left,rh->left) && equal(lh->right,rh->right);
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    BTreeNode<T>* add(BTreeNode<T>* lh,BTreeNode<T>* rh) const
-    {
-        BTreeNode<T>* ret = NULL;
-
-        if((lh != NULL) && (rh == NULL))
-        {
-            ret = clone(lh);
-        }
-        else if((lh == NULL) && (rh != NULL))
-        {
-            ret = clone(rh);
-        }
-        else if((lh != NULL) && (rh != NULL))
-        {
-            ret = BTreeNode<T>::NewNode();
-            if(ret != NULL)
-            {
-                ret->value = lh->value + rh->value;
-                ret->left = add(lh->left,rh->left);
-                ret->right = add(lh->right,rh->right);
-
-                if(ret->left != NULL)
-                {
-                    ret->left->parent = ret;
-                }
-                if(ret->right != NULL)
-                {
-                    ret->right->parent = ret;
+                    node->parent = NULL;
                 }
 
-            }
-            else
-            {
-                THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new node ...");
+                ret->m_root = node;
             }
         }
 
-        return ret;
-    }
-
-public:
-
-    bool insert(TreeNode<T>* node)
-    {
-        return insert(node,ANY);
-    }
-
-    virtual bool insert(TreeNode<T>* node,BTreeNodePos pos)
-    {
-        bool ret = true;
-        if( node != NULL)
+        virtual void free(BTreeNode<T>* node)
         {
-            if(this->m_root == NULL)
+            if (node != NULL)
             {
-                node->parent = NULL;
-                this->m_root = node;
-            }
-            else
-            {
-                BTreeNode<T>* np = find(node->parent);
-                if(node != NULL)
+                free(node->left);
+                free(node->right);
+
+                if (node->flag())
                 {
-                    insert(dynamic_cast<BTreeNode<T>*>(node),np,pos);
+                    delete node;
+                }
+            }
+        }
+
+        int count(BTreeNode<T>* node) const
+        {
+            return (node != NULL) ? (count(node->left) + count(node->right) + 1) : 0;
+        }
+
+        int height(BTreeNode<T>* node) const
+        {
+            int ret = 0;
+
+            if (node != NULL)
+            {
+                int lh = height(node->left);
+                int rh = height(node->right);
+
+                ret = ((lh > rh) ? lh : rh) + 1;
+            }
+
+            return ret;
+        }
+
+        int degree(BTreeNode<T>* node) const
+        {
+            int ret = 0;
+
+            if (node != NULL)
+            {
+                BTreeNode<T>* child[] = { node->left, node->right };
+
+                ret = (!!node->left + !!node->right);
+
+                for (int i = 0; (i < 2) && (ret < 2); i++)
+                {
+                    int d = degree(child[i]);
+
+                    if (ret < d)
+                    {
+                        ret = d;
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        void preOrderTraversal(BTreeNode<T>* node, LinkQueue<BTreeNode<T>*>& queue)
+        {
+            if (node != NULL)
+            {
+                queue.add(node);
+                preOrderTraversal(node->left, queue);
+                preOrderTraversal(node->right, queue);
+            }
+        }
+
+        void inOrderTraversal(BTreeNode<T>* node, LinkQueue<BTreeNode<T>*>& queue)
+        {
+            if (node != NULL)
+            {
+                inOrderTraversal(node->left, queue);
+                queue.add(node);
+                inOrderTraversal(node->right, queue);
+            }
+        }
+
+        void postOrderTraversal(BTreeNode<T>* node, LinkQueue<BTreeNode<T>*>& queue)
+        {
+            if (node != NULL)
+            {
+                postOrderTraversal(node->left, queue);
+                postOrderTraversal(node->right, queue);
+                queue.add(node);
+            }
+        }
+
+        void levelOrderTraversal(BTreeNode<T>* node, LinkQueue<BTreeNode<T>*>& queue)
+        {
+            if (node != NULL)
+            {
+                LinkQueue<BTreeNode<T>*> tmp;
+
+                tmp.add(node);
+
+                while (tmp.length() > 0)
+                {
+                    BTreeNode<T>* n = tmp.front();
+
+                    if (n->left != NULL)
+                    {
+                        tmp.add(n->left);
+                    }
+
+                    if (n->right != NULL)
+                    {
+                        tmp.add(n->right);
+                    }
+
+                    tmp.remove();
+                    queue.add(n);
+                }
+            }
+        }
+
+        BTreeNode<T>* clone(BTreeNode<T>* node) const
+        {
+            BTreeNode<T>* ret = NULL;
+
+            if (node != NULL)
+            {
+                ret = BTreeNode<T>::NewNode();
+
+                if (ret != NULL)
+                {
+                    ret->value = node->value;
+
+                    ret->left = clone(node->left);
+                    ret->right = clone(node->right);
+
+                    if (ret->left != NULL)
+                    {
+                        ret->left->parent = ret;
+                    }
+
+                    if (ret->right != NULL)
+                    {
+                        ret->right->parent = ret;
+                    }
                 }
                 else
                 {
-                    THROW_EXCEPTION(InvalidParamterException,"Invalid node parent ...");
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new node ...");
                 }
             }
-        }
-        else
-        {
-            THROW_EXCEPTION(InvalidParamterException,"Invalid Parameter node  ...");
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    bool insert(const T& value,TreeNode<T>* parent)
-    {
-        return insert(value,parent,ANY);
-    }
-
-    virtual bool insert(const T& value,TreeNode<T>* parent,BTreeNodePos pos)
-    {
-        bool ret = true;
-
-        BTreeNode<T>* node = BTreeNode<T>::NewNode();
-
-        if(node != NULL)
+        bool equal(BTreeNode<T>* lh, BTreeNode<T>* rh) const
         {
-            node->value = value;
-            node->parent = parent;
-            ret = insert(node,pos);
-            if( !ret )
+            if (lh == rh)
             {
-                delete node;
+                return true;
+            }
+            else if ((lh != NULL) && (rh != NULL))
+            {
+                return (lh->value == rh->value) && equal(lh->left, rh->left) && equal(lh->right, rh->right);
+            }
+            else
+            {
+                return false;
             }
         }
-        else
+
+        BTreeNode<T>* add(BTreeNode<T>* lh, BTreeNode<T>* rh) const
         {
-            THROW_EXCEPTION(NoEnoughMemoryException,"No enough memory to create new node ...");
+            BTreeNode<T>* ret = NULL;
+
+            if ((lh == NULL) && (rh != NULL))
+            {
+                ret = clone(rh);
+            }
+            else if ((lh != NULL) && (rh == NULL))
+            {
+                ret = clone(lh);
+            }
+            else if ((lh != NULL) && (rh != NULL))
+            {
+                ret = BTreeNode<T>::NewNode();
+
+                if (ret != NULL)
+                {
+                    ret->value = lh->value + rh->value;
+
+                    ret->left = add(lh->left, rh->left);
+                    ret->right = add(lh->right, rh->right);
+
+                    if (ret->left != NULL)
+                    {
+                        ret->left->parent = ret;
+                    }
+
+                    if (ret->right != NULL)
+                    {
+                        ret->right->parent = ret;
+                    }
+                }
+                else
+                {
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new node ....");
+                }
+            }
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    SharedPointer<Tree<T>> remove(const T& value)
-    {
-        BTree<T>* ret = NULL;
-
-        BTreeNode<T>* node = find(value);
-        if(node == NULL)
+        void traversal(BTTraversal order, LinkQueue<BTreeNode<T>*>& queue)
         {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter node is invalid ...");
+            switch (order)
+            {
+            case PreOrder:
+                preOrderTraversal(root(), queue);
+                break;
+            case InOrder:
+                inOrderTraversal(root(), queue);
+                break;
+            case PostOrder:
+                postOrderTraversal(root(), queue);
+                break;
+            case LevelOrder:
+                levelOrderTraversal(root(), queue);
+                break;
+            default:
+                THROW_EXCEPTION(InvalidParameterException, "Parameter order is invalid ...");
+                break;
+            }
         }
-        else
+
+        BTreeNode<T>* connect(LinkQueue<BTreeNode<T>*>& queue)
         {
-            remove(node,ret);
+            BTreeNode<T>* ret = NULL;
+
+            if (queue.length() > 0)
+            {
+                ret = queue.front();
+
+                BTreeNode<T>* slider = queue.front();
+
+                queue.remove();
+
+                slider->left = NULL;
+
+                while (queue.length() > 0)
+                {
+                    slider->right = queue.front();
+                    queue.front()->left = slider;
+                    slider = queue.front();
+                    queue.remove();
+                }
+
+                slider->right = NULL;
+            }
+
+            return ret;
         }
-        return ret;
-    }
-
-    SharedPointer<Tree<T>> remove(TreeNode<T>* node)
-    {
-        BTree<T>* ret = NULL;
-
-        node = find(node);
-        if(node == NULL)
+    public:
+        bool insert(TreeNode<T>* node)
         {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter node is invalid ...");
+            return insert(node, ANY);
         }
-        else
+
+        virtual bool insert(TreeNode<T>* node, BTNodePos pos)
         {
-            remove(dynamic_cast<BTreeNode<T>*>(node),ret);
+            bool ret = true;
+
+            if (node != NULL)
+            {
+                if (this->m_root == NULL)
+                {
+                    node->parent = NULL;
+                    this->m_root = node;
+                }
+                else
+                {
+                    BTreeNode<T>* np = find(node->parent);
+
+                    if (np != NULL)
+                    {
+                        ret = insert(dynamic_cast<BTreeNode<T>*>(node), np, pos);
+                    }
+                    else
+                    {
+                        THROW_EXCEPTION(InvalidParameterException, "Invalid parent tree node ...");
+                    }
+                }
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Parameter node can not be NULL");
+            }
+
+            return ret;
         }
-        return ret;
-    }
 
-    BTreeNode<T>* find(const T& value)
-    {
-        return find(root(),value);
-    }
-
-    BTreeNode<T>* find(TreeNode<T>* node)
-    {
-        return find(root(),dynamic_cast<BTreeNode<T>*>(node));
-    }
-
-    BTreeNode<T>* root() const
-    {
-        return dynamic_cast<BTreeNode<T>*>(this->m_root);
-    }
-
-    int degree() const
-    {
-        return degree(root());
-    }
-
-    int count() const
-    {
-        return count(root());
-    }
-
-    int height() const
-    {
-        return height(root());
-    }
-
-    void clear()
-    {
-        clear(root());
-        this->m_root = NULL;
-        m_queue.clear();
-    }
-
-    bool begin()
-    {
-        bool ret = (root() != NULL);
-
-        if(ret)
+        bool insert(const T& value, TreeNode<T>* parent)
         {
+            return insert(value, parent, ANY);
+        }
+
+        virtual bool insert(const T& value, TreeNode<T>* parent, BTNodePos pos)
+        {
+            bool ret = true;
+            BTreeNode<T>* node = BTreeNode<T>::NewNode();
+
+            if (node == NULL)
+            {
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new node ...");
+            }
+            else
+            {
+                node->value = value;
+                node->parent = parent;
+
+                ret = insert(node, pos);
+
+                if (!ret)
+                {
+                    delete node;
+                }
+            }
+
+            return ret;
+        }
+
+        SharedPointer< Tree<T> > remove(const T& value)
+        {
+            BTree<T>* ret = NULL;
+            BTreeNode<T>* node = find(value);
+
+            if (node == NULL)
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Can not find the tree node via value ...");
+            }
+            else
+            {
+                remove(node, ret);
+
+                m_queue.clear();
+            }
+
+            return ret;
+        }
+
+        SharedPointer< Tree<T> > remove(TreeNode<T>* node)
+        {
+            BTree<T>* ret = NULL;
+
+            node = find(node);
+
+            if (node == NULL)
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Parameter node is invalid ...");
+            }
+            else
+            {
+                remove(dynamic_cast<BTreeNode<T>*>(node), ret);
+
+                m_queue.clear();
+            }
+
+            return ret;
+        }
+
+        BTreeNode<T>* find(const T& value) const
+        {
+            return find(root(), value);
+        }
+
+        BTreeNode<T>* find(TreeNode<T>* node) const
+        {
+            return find(root(), dynamic_cast<BTreeNode<T>*>(node));
+        }
+
+        BTreeNode<T>* root() const
+        {
+            return dynamic_cast<BTreeNode<T>*>(this->m_root);
+        }
+
+        int degree() const
+        {
+            return degree(root());
+        }
+
+        int count() const
+        {
+            return count(root());
+        }
+
+        int height() const
+        {
+            return height(root());
+        }
+
+        void clear()
+        {
+            free(root());
+
             m_queue.clear();
-            m_queue.add(root());
+
+            this->m_root = NULL;
         }
-        return ret;
-    }
 
-    bool end()
-    {
-        return (m_queue.length() == 0);
-    }
-
-    bool next()
-    {
-        bool ret = !end();
-
-        if(ret)
+        bool begin()
         {
-            BTreeNode<T>* node = m_queue.front();
-            m_queue.remove();
-            if(node->left) m_queue.add(node->left);
-            if(node->right) m_queue.add(node->right);
+            bool ret = (root() != NULL);
+
+            if (ret)
+            {
+                m_queue.clear();
+                m_queue.add(root());
+            }
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    T current()
-    {
-        bool ret = !end();
-        if(ret)
+        bool end()
         {
-            return m_queue.front()->value;
+            return (m_queue.length() == 0);
         }
-        else
+
+        bool next()
         {
-            THROW_EXCEPTION(InvalidOperationException,"Can not get the element at the GTree ...");
+            bool ret = (m_queue.length() > 0);
+
+            if (ret)
+            {
+                BTreeNode<T>* node = m_queue.front();
+
+                m_queue.remove();
+
+                if (node->left != NULL)
+                {
+                    m_queue.add(node->left);
+                }
+
+                if (node->right != NULL)
+                {
+                    m_queue.add(node->right);
+                }
+
+            }
+
+            return ret;
         }
-    }
 
-    SharedPointer<Array<T>> traversal(BTTraversal order)
-    {
-        DynamicArray<T>* ret = NULL;
-        LinkQueue<BTreeNode<T>*> queue;
-
-        switch(order)
+        T current()
         {
-        case PreOrder :
-            preOrder(root(),queue);
-            break;
-        case InOrder :
-            inOrder(root(),queue);
-            break;
-        case PostOrder :
-            postOrder(root(),queue);
-            break;
-        default:
-            THROW_EXCEPTION(InvalidParamterException,"Parameter order is invalid ...");
-            break;
+            if (!end())
+            {
+                return m_queue.front()->value;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No value at current position ...");
+            }
         }
 
-        int len = queue.length();
-        ret = new DynamicArray<T>(len);
-        for(int i=0;i<len;i++)
+        SharedPointer< Array<T> > traversal(BTTraversal order)
         {
-            ret->set(i,queue.front()->value);
-            queue.remove();
-        }
-        return ret;
-    }
+            DynamicArray<T>* ret = NULL;
+            LinkQueue<BTreeNode<T>*> queue;
 
-    SharedPointer<BTree<T>> clone() const
-    {
-        BTree<T>* ret = new BTree<T>();
-        if(ret != NULL)
+            traversal(order, queue);
+
+            ret = new DynamicArray<T>(queue.length());
+
+            if (ret != NULL)
+            {
+                for (int i = 0; i < ret->length(); i++, queue.remove())
+                {
+                    ret->set(i, queue.front()->value);
+                }
+            }
+            else
+            {
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create return array ...");
+            }
+
+            return ret;
+        }
+
+        BTreeNode<T>* thread(BTTraversal order)
         {
-            ret->m_root = clone(root());
+            BTreeNode<T>* ret = NULL;
+            LinkQueue<BTreeNode<T>*> queue;
+
+            traversal(order, queue);
+
+            ret = connect(queue);
+
+            this->m_root = NULL;
+
+            m_queue.clear();
+
+            return ret;
         }
-        else
+
+        SharedPointer< BTree<T> > clone() const
         {
-            THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new tree ...");
+            BTree<T>* ret = new BTree<T>();
+
+            if (ret != NULL)
+            {
+                ret->m_root = clone(root());
+            }
+            else
+            {
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new tree ....");
+            }
+
+            return ret;
         }
-        return ret;
-    }
 
-    bool operator==(BTree<T>& obj)
-    {
-        return equal(root(),obj.root());
-    }
-
-    bool operator!=(BTree<T>& obj)
-    {
-        return !(*this == obj);
-    }
-
-    SharedPointer<BTree<T>> add(BTree<T>& obj)
-    {
-        BTree<T>* ret = new BTree<T>();
-        if(ret != NULL)
+        bool operator == (const BTree<T>& btree)
         {
-            ret->m_root = add(root(),obj.root());
+            return equal(root(), btree.root());
         }
-        else
-        {
-            THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new tree ...");
-        }
-        return ret;
-    }
 
-    ~BTree()
-    {
-        clear();
-    }
-};
+
+        bool operator != (const BTree<T>& btree)
+        {
+            return !(*this == btree);
+        }
+
+        SharedPointer< BTree<T> > add(const BTree<T>& btree) const
+        {
+            BTree<T>* ret = new BTree<T>();
+
+            if (ret != NULL)
+            {
+                ret->m_root = add(root(), btree.root());
+            }
+            else
+            {
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create new tree ...");
+            }
+
+            return ret;
+        }
+
+        ~BTree()
+        {
+            clear();
+        }
+    };
 
 }

@@ -1,98 +1,112 @@
 #pragma once
 
-#include<cstdlib>
-#include"Pointer.h"
-#include"Exception.h"
+#include <cstdlib>
+#include "Pointer.h"
+#include "Exception.h"
 
 namespace JYLib
 {
-	template<typename T>
-	class SharedPointer : public Pointer<T>
-	{
-	protected:
-		int *m_ref;
 
-		void assign(const SharedPointer<T>& obj)
-		{
-			this->m_pointer = obj.m_pointer;
-			this->m_ref = obj.m_ref;
+    template < typename T >
+    class SharedPointer : public Pointer<T>
+    {
+    protected:
+        int* m_ref;
 
-            if (this->m_pointer)
-			{
-				(*(this->m_ref))++;
-			}
-		}
-	public:
-		SharedPointer(T* p = NULL)
-		{
-			this->m_ref = NULL;
-			this->m_pointer = NULL;
-			if (p)
-			{
-				this->m_ref = static_cast<int*>(std::malloc(sizeof(int)));
-				if (this->m_ref)
-				{
-					*(this->m_ref) = 1;
-					this->m_pointer = p;
-				}
-				else
-				{
-					THROW_EXCEPTION(NoEnoughMemoryException, "No enough memory to make a int variable...");
-				}
-			}
-		}
+        void assign(const SharedPointer<T>& obj)
+        {
+            this->m_ref = obj.m_ref;
+            this->m_pointer = obj.m_pointer;
+
+            if (this->m_ref)
+            {
+                (*this->m_ref)++;
+            }
+        }
+
+    public:
+        SharedPointer(T* p = NULL) : m_ref(NULL)
+        {
+            if (p)
+            {
+                this->m_ref = static_cast<int*>(std::malloc(sizeof(int)));
+
+                if (this->m_ref)
+                {
+                    *(this->m_ref) = 1;
+                    this->m_pointer = p;
+                }
+                else
+                {
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create SharedPointer object ...");
+                }
+            }
+        }
 
         SharedPointer(const SharedPointer<T>& obj) : Pointer<T>(NULL)
         {
-			assign(obj);
-		}
+            assign(obj);
+        }
 
-		SharedPointer<T>& operator= (const SharedPointer<T>& obj)
-		{
-			if (this != &obj)
-			{
-				clear();
-				assign(obj);
-			}
+        SharedPointer<T>& operator= (const SharedPointer<T>& obj)
+        {
+            if (this != &obj)
+            {
+                clear();
+                assign(obj);
+            }
 
-			return *this;
-		}
+            return *this;
+        }
 
-		void clear()
-		{
-			T* todel = this->m_pointer;
-			int* ref = this->m_ref;
+        void clear()
+        {
+            T* toDel = this->m_pointer;
+            int* ref = this->m_ref;
 
-			this->m_pointer = NULL;
-			this->m_ref = NULL;
+            this->m_pointer = NULL;
+            this->m_ref = NULL;
 
-            if (todel)
-			{
-				(*ref)--;
-				if (*ref <= 0)
-				{
-					free(ref);
-					delete todel;
-				}
-			}
-		}
+            if (ref)
+            {
+                (*ref)--;
 
-		~SharedPointer()
-		{
-			clear();
-		}
-	};
+                if (*ref == 0)
+                {
+                    free(ref);
 
-    template <typename T>
-    bool operator==(const SharedPointer<T>& l,SharedPointer<T>& r)
+                    delete toDel;
+                }
+            }
+        }
+
+        ~SharedPointer()
+        {
+            clear();
+        }
+    };
+
+    template < typename T >
+    bool operator == (const T* l, const SharedPointer<T>& r)
+    {
+        return (l == r.get());
+    }
+
+    template < typename T >
+    bool operator == (const SharedPointer<T>& l, const T* r)
     {
         return (l.get() == r.get());
     }
 
-    template <typename T>
-    bool operator!=(const SharedPointer<T>& l,SharedPointer<T>& r)
+    template < typename T >
+    bool operator == (const SharedPointer<T>& l, const SharedPointer<T>& r)
+    {
+        return (l.get() == r.get());
+    }
+
+    template < typename T >
+    bool operator != (const SharedPointer<T>& l, const SharedPointer<T>& r)
     {
         return !(l == r);
     }
-
 }

@@ -1,12 +1,12 @@
 #pragma once
 
-#include"Exception.h"
-#include"Object.h"
-#include"List.h"
+#include "List.h"
+#include "Exception.h"
 
 namespace JYLib
 {
-    template<typename T>
+
+    template < typename T >
     class DualLinkList : public List<T>
     {
     protected:
@@ -19,19 +19,19 @@ namespace JYLib
 
         mutable struct : public Object
         {
-            char reverse[sizeof(T)];
+            char reserved[sizeof(T)];
             Node* next;
             Node* pre;
-        } m_head;
+        } m_header;
 
         int m_length;
         int m_step;
         Node* m_current;
 
-
-        Node* position(int i) const
+        Node* position(int i) const    // O(n)
         {
-            Node* ret = reinterpret_cast<Node*>(&m_head);
+            Node* ret = reinterpret_cast<Node*>(&m_header);
+
             for (int p = 0; p < i; p++)
             {
                 ret = ret->next;
@@ -53,85 +53,94 @@ namespace JYLib
     public:
         DualLinkList()
         {
-            m_head.next = NULL;
-            m_head.pre = NULL;
+            m_header.next = NULL;
+            m_header.pre = NULL;
             m_length = 0;
             m_step = 1;
             m_current = NULL;
         }
 
-        bool insert(const T& e)
+        bool insert(const T& e)   // O(n)
         {
             return insert(m_length, e);
         }
 
-        virtual bool insert(int i, const T& e)
+        bool insert(int i, const T& e)   // O(n)
         {
-            bool ret = ((i >= 0) && (i <= m_length));
+            bool ret = ((0 <= i) && (i <= m_length));
 
-            Node* node = create();
-            if (node != NULL)
+            if (ret)
             {
-                Node* current = position(i);
-                Node* next = current->next;
+                Node* node = create();
 
-                node->value = e;
-                node->next = next;
-                current->next = node;
-
-                if(current != reinterpret_cast<Node*>(&m_head))
+                if (node != NULL)
                 {
-                    node->pre = current;
+                    Node* current = position(i);
+                    Node* next = current->next;
+
+                    node->value = e;
+
+                    node->next = next;
+                    current->next = node;
+
+                    if (current != reinterpret_cast<Node*>(&m_header))
+                    {
+                        node->pre = current;
+                    }
+                    else
+                    {
+                        node->pre = NULL;
+                    }
+
+                    if (next != NULL)
+                    {
+                        next->pre = node;
+                    }
+
+                    m_length++;
                 }
                 else
                 {
-                    node->pre = NULL;
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to insert new element ...");
                 }
-
-                if(next)
-                {
-                    next->pre = node;
-                }
-
-                m_length++;
             }
-            else
-            {
-                THROW_EXCEPTION(NoEnoughMemoryException, "no memory to create new node for LinkList...");
-            }
+
             return ret;
         }
 
-        virtual bool remove(int i)
+        bool remove(int i)   // O(n)
         {
-            bool ret = ((i >= 0) && (i < m_length));
+            bool ret = ((0 <= i) && (i < m_length));
 
             if (ret)
             {
                 Node* current = position(i);
-                Node* delNode = current->next;
-                Node* next = delNode->next;
+                Node* toDel = current->next;
+                Node* next = toDel->next;
 
-                if (m_current == delNode)
+                if (m_current == toDel)
                 {
                     m_current = next;
                 }
-                current->next = delNode->next;
-                if(next != NULL)
-                {
-                    next->pre = current;
-                }
-                m_length--;
-                destroy(delNode);
 
+                current->next = next;
+
+                if (next != NULL)
+                {
+                    next->pre = toDel->pre;
+                }
+
+                m_length--;
+
+                destroy(toDel);
             }
 
             return ret;
         }
 
-        virtual bool set(int i, const T& e)
+        bool set(int i, const T& e)   // O(n)
         {
-            bool ret = ((i >= 0) && (i < m_length));
+            bool ret = ((0 <= i) && (i < m_length));
 
             if (ret)
             {
@@ -141,19 +150,7 @@ namespace JYLib
             return ret;
         }
 
-        virtual bool get(int i, T& e) const
-        {
-            bool ret = ((i >= 0) && (i < m_length));
-
-            if (ret)
-            {
-                e = position(i)->next->value;
-            }
-
-            return ret;
-        }
-
-        virtual T get(int i)
+        virtual T get(int i) const    // O(n)
         {
             T ret;
 
@@ -163,41 +160,55 @@ namespace JYLib
             }
             else
             {
-                THROW_EXCEPTION(IndexOutOfBoundsException, "The parameter i is invalid...");
+                THROW_EXCEPTION(IndexOutOfBoundsException, "Invalid parameter i to get element ...");
             }
+
             return ret;
         }
 
-        virtual int find(const T& e) const
+        bool get(int i, T& e) const  // O(n)
+        {
+            bool ret = ((0 <= i) && (i < m_length));
+
+            if (ret)
+            {
+                e = position(i)->next->value;
+            }
+
+            return ret;
+        }
+
+        int find(const T& e) const    //  O(n)
         {
             int ret = -1;
-            Node* cur = m_head.next;
             int i = 0;
-            while (cur)
+            Node* node = m_header.next;
+
+            while (node)
             {
-                if (cur->value == e)
+                if (node->value == e)
                 {
                     ret = i;
                     break;
                 }
                 else
                 {
+                    node = node->next;
                     i++;
-                    cur = cur->next;
                 }
             }
 
             return ret;
         }
 
-        int length() const
+        int length() const    // O(1)
         {
             return m_length;
         }
 
-        void clear()
+        void clear()    // O(n)
         {
-            while (this->m_length > 0)
+            while (m_length > 0)
             {
                 remove(0);
             }
@@ -205,7 +216,7 @@ namespace JYLib
 
         virtual bool move(int i, int step = 1)
         {
-            bool ret = (i >= 0) && (i <= m_length) && (step > 0);
+            bool ret = (0 <= i) && (i < m_length) && (step > 0);
 
             if (ret)
             {
@@ -229,14 +240,15 @@ namespace JYLib
             }
             else
             {
-                THROW_EXCEPTION(InvalidOperationException, "No value at current position...");
+                THROW_EXCEPTION(InvalidOperationException, "No value at current position ...");
             }
         }
 
         virtual bool next()
         {
             int i = 0;
-            while ((i < m_step) && (!end()))
+
+            while ((i < m_step) && !end())
             {
                 m_current = m_current->next;
                 i++;
@@ -248,7 +260,8 @@ namespace JYLib
         virtual bool pre()
         {
             int i = 0;
-            while ((i < m_step) && (!end()))
+
+            while ((i < m_step) && !end())
             {
                 m_current = m_current->pre;
                 i++;
@@ -257,9 +270,11 @@ namespace JYLib
             return (i == m_step);
         }
 
-        ~DualLinkList()
+
+        ~DualLinkList()   // O(n)
         {
             clear();
         }
     };
+
 }

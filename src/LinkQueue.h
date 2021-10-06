@@ -1,57 +1,98 @@
 #pragma once
 
-#include"Queue.h"
-#include"Exception.h"
-#include"LinkList.h"
+#include "Queue.h"
+#include "LinuxList.h"
+#include "Exception.h"
 
 namespace JYLib
 {
 
-template <typename T>
-class LinkQueue : public Object
-{
-protected:
-    LinkList<T> m_list;
-public:
-
-    void add(const T& e)
+    template < typename T >
+    class LinkQueue : public Queue<T>
     {
-        m_list.insert(e);
-    }
-
-    void remove()
-    {
-        if(m_list.length() > 0)
+    protected:
+        struct Node : public Object
         {
-            m_list.remove(0);
-        }
-        else
-        {
-            THROW_EXCEPTION(InvalidOperationException,"The LinkQueue is NULL ...");
-        }
-    }
+            list_head head;
+            T value;
+        };
 
-    T front() const
-    {
-        if(m_list.length() > 0)
+        list_head m_header;
+        int m_length;
+    public:
+        LinkQueue()   // O(1)
         {
-            return m_list.get(0);
+            m_length = 0;
+
+            INIT_LIST_HEAD(&m_header);
         }
-        else
+
+        void add(const T& e)     // O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The LinkQueue is NULL ...");
+            Node* node = new Node();
+
+            if (node != NULL)
+            {
+                node->value = e;
+
+                list_add_tail(&node->head, &m_header);   // O(1)
+
+                m_length++;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No memory to add new element ...");
+            }
         }
-    }
 
-    void clear()
-    {
-        m_list.clear();
-    }
+        void remove()      // O(1)
+        {
+            if (m_length > 0)
+            {
+                list_head* toDel = m_header.next;
 
-    int length() const
-    {
-        return  m_list.length();
-    }
-};
+                list_del(toDel);
+
+                m_length--;
+
+                delete list_entry(toDel, Node, head);
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current queue ...");
+            }
+        }
+
+        T front() const    // O(1)
+        {
+            if (m_length > 0)
+            {
+                return list_entry(m_header.next, Node, head)->value;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current queue ...");
+            }
+        }
+
+        void clear()    // O(n)
+        {
+            while (m_length > 0)
+            {
+                remove();
+            }
+        }
+
+        int length() const    // O(1)
+        {
+            return m_length;
+        }
+
+
+        ~LinkQueue()   // O(n)
+        {
+            clear();
+        }
+    };
 
 }

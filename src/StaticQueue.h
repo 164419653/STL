@@ -1,83 +1,82 @@
 #pragma once
 
-#include"Queue.h"
-#include"Exception.h"
+#include "Queue.h"
+#include "Exception.h"
 
 namespace JYLib
 {
 
-template <typename T,int N>
-class StaticQueue : public Queue<T>
-{
-protected:
-    T m_space[N];
-    int m_front;
-    int m_rear;
-    int m_size;
-
-public:
-    StaticQueue()
+    template < typename T, int N >
+    class StaticQueue : public Queue<T>
     {
-        m_front = 0;
-        m_rear = 0;
-        m_size = 0;
-    }
-
-    void add(const T& e)
-    {
-        if(m_size < N)
+    protected:
+        T m_space[N];
+        int m_front;
+        int m_rear;
+        int m_length;
+    public:
+        StaticQueue()
         {
-            m_space[m_rear] = e;
-            m_rear = (m_rear+1) % N;
-            m_size++;
+            m_front = 0;
+            m_rear = 0;
+            m_length = 0;
         }
-        else
-        {
-            THROW_EXCEPTION(InvalidOperationException,"The StaticQueue is full ...");
-        }
-    }
 
-    void remove()
-    {
-        if(m_size > 0)
+        int capacity() const   // O(1)
         {
-            m_front = (m_front+1) % N;
-            m_size--;
+            return N;
         }
-        else
+
+        void add(const T& e)    // O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The StaticQueue is NULL ...");
+            if (m_length < N)
+            {
+                m_space[m_rear] = e;
+                m_rear = (m_rear + 1) % N;
+                m_length++;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No space in current queue ...");
+            }
         }
-    }
 
-    T front() const
-    {
-        if(m_size > 0)
+        void remove()    // O(1)
         {
-            return m_space[m_front];
+            if (m_length > 0)
+            {
+                m_front = (m_front + 1) % N;
+                m_length--;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current queue ...");
+            }
         }
-        else
+
+        T front() const   //  O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The StaticQueue is NULL ...");
+            if (m_length > 0)
+            {
+                return m_space[m_front];
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current queue ...");
+            }
         }
-    }
 
-    void clear()
-    {
-        m_size = 0;
-        m_front = 0;
-        m_rear = 0;
-    }
+        void clear()   // O(1)
+        {
+            m_front = 0;
+            m_rear = 0;
+            m_length = 0;
+        }
 
-    int length() const
-    {
-        return m_size;
-    }
-
-    int capacity() const
-    {
-        return N;
-    }
-};
+        int length() const   // O(1)
+        {
+            return m_length;
+        }
+    };
 
 }

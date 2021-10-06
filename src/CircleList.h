@@ -1,167 +1,165 @@
-#ifndef CIRCLELIST_H
-#define CIRCLELIST_H
+#pragma once
 
-#include"LinkList.h"
+#include "LinkList.h"
 
 namespace JYLib
 {
 
-template <typename T>
-class CircleList : public LinkList<T>
-{
-protected:
-    typedef typename LinkList<T>::Node Node;
-
-    Node* last() const
+    template < typename T >
+    class CircleList : public LinkList<T>
     {
-        return this->position(this->m_length);
-    }
+    protected:
+        typedef typename LinkList<T>::Node Node;
 
-    void last_to_first()
-    {
-        last()->next = this->m_head.next;
-    }
-
-    int mod(int i)
-    {
-        return (this->m_length==0?0:i%this->m_length);
-    }
-
-public:
-    bool insert(const T& e)
-    {
-        return insert(this->m_length,e);
-    }
-
-    bool insert(int i,const T& e)
-    {
-        bool ret = true;
-
-        i = (i % (this->m_length + 1));
-        ret = LinkList<T>::insert(i,e);
-
-        if(ret && i==0)
+        int mod(int i) const   // O(1)
         {
-            last_to_first();
+            return (this->m_length == 0) ? 0 : (i % this->m_length);
         }
 
-        return ret;
-    }
-
-    bool remove(int i)
-    {
-        bool ret = true;
-
-        i = mod(i);
-
-        if(i == 0)
+        Node* last() const    // O(n)
         {
-            Node* toDel = this->m_head.next;
-            if(toDel != NULL)
+            return this->position(this->m_length - 1)->next;
+        }
+
+        void last_to_first() const   // O(n)
+        {
+            last()->next = this->m_header.next;
+        }
+
+    public:
+        bool insert(const T& e)      // O(n)
+        {
+            return insert(this->m_length, e);
+        }
+
+        bool insert(int i, const T& e)        // O(n)
+        {
+            bool ret = true;
+
+            i = i % (this->m_length + 1);     // O(1)
+
+            ret = LinkList<T>::insert(i, e);  // O(n)
+
+            if (ret && (i == 0))
             {
-                this->m_head.next = toDel->next;
-                this->m_length--;
-                if(this->m_length > 0)
+                last_to_first();              // O(n)
+            }
+
+            return ret;
+        }
+
+        bool remove(int i)   // O(n)
+        {
+            bool ret = true;
+
+            i = mod(i);
+
+            if (i == 0)
+            {
+                Node* toDel = this->m_header.next;
+
+                if (toDel != NULL)
                 {
-                    last_to_first();
-                    if(this->m_current == toDel)
+                    this->m_header.next = toDel->next;
+                    this->m_length--;
+
+                    if (this->m_length > 0)
                     {
-                        this->m_current = toDel->next;
+                        last_to_first();
+
+                        if (this->m_current == toDel)
+                        {
+                            this->m_current = toDel->next;
+                        }
                     }
+                    else
+                    {
+                        this->m_header.next = NULL;
+                        this->m_current = NULL;
+                    }
+
+                    this->destroy(toDel);
                 }
                 else
                 {
-                    this->m_head.next = NULL;
-                    this->m_current = NULL;
+                    ret = false;
                 }
             }
             else
             {
-                ret = false;
+                ret = LinkList<T>::remove(i);   // O(n)
             }
-            this->destroy(toDel);
-        }
-        else
-        {
-            ret = LinkList<T>::remove(i);
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    bool set(int i,T& e)
-    {
-        return LinkList<T>::set(mod(i),e);
-    }
-
-    bool get(int i,T& e)
-    {
-        return LinkList<T>::get(mod(i),e);
-    }
-
-    T get(int i) const
-    {
-        T e;
-        get(mod(i),e);
-        return e;
-    }
-
-    int find(const T& e)
-    {
-        int ret = -1;
-
-        Node* slider = this->m_head.next;
-        for(int i=0;i<this->m_length;i++)
+        bool set(int i, const T& e)  // O(n)
         {
-            if(slider->value == e)
+            return LinkList<T>::set(mod(i), e);
+        }
+
+        T get(int i) const           // O(n)
+        {
+            return LinkList<T>::get(mod(i));
+        }
+
+        bool get(int i, T& e) const  // O(n)
+        {
+            return LinkList<T>::get(mod(i), e);
+        }
+
+        int find(const T& e) const    // O(n)
+        {
+            int ret = -1;
+            Node* slider = this->m_header.next;
+
+            for (int i = 0; i < this->m_length; i++)
             {
-                ret = i;
-                break;
+                if (slider->value == e)
+                {
+                    ret = i;
+                    break;
+                }
+
+                slider = slider->next;
             }
-            slider = slider->next;
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    void clear()
-    {
-        while(this->m_length > 1)
+        void clear()    // O(n)
         {
-            remove(1);
+            while (this->m_length > 1)   // O(n)
+            {
+                remove(1);   // O(1)
+            }
+
+            if (this->m_length == 1)     // O(1)
+            {
+                Node* toDel = this->m_header.next;
+
+                this->m_header.next = NULL;
+                this->m_length = 0;
+                this->m_current = NULL;
+
+                this->destroy(toDel);
+            }
         }
 
-        if(this->m_length == 1)
+        bool move(int i, int step)   // O(n)
         {
-            Node* toDel = this->m_head.next;
-
-            this->m_length = 0;
-            this->m_head.next = NULL;
-            this->m_current = NULL;
-
-            this->destroy(toDel);
+            return LinkList<T>::move(mod(i), step);
         }
-    }
 
-    bool move(int i,int step=1)
-    {
-        return LinkList<T>::move(mod(i),step);
-    }
+        bool end()   // O(1)
+        {
+            return (this->m_length == 0) || (this->m_current == NULL);
+        }
 
-    bool end()
-    {
-        return (this->m_length == 0) || (this->m_current == NULL);
-    }
-
-    ~CircleList()
-    {
-        clear();
-    }
-};
-
+        ~CircleList()   // O(n)
+        {
+            clear();
+        }
+    };
 
 }
-
-
-
-#endif // CIRCLELIST_H

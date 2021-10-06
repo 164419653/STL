@@ -1,206 +1,280 @@
 #pragma once
 
-#include"DualLinkList.h"
+
+#include "LinuxList.h"
+#include "DualLinkList.h"
+
 
 namespace JYLib
 {
 
-template <typename T>
-class DualCircleList : public DualLinkList<T>
-{
-
-protected:
-
-    typedef typename DualLinkList<T>::Node Node;
-
-    int mod(int i)
+    template < typename T >
+    class DualCircleList : public DualLinkList<T>
     {
-        return this->m_length==0?0:i%this->m_length;
-    }
-
-public:
-    DualCircleList()
-    {
-        this->m_head.next = reinterpret_cast<Node*>(&(this->m_head));
-        this->m_head.pre = reinterpret_cast<Node*>(&(this->m_head));
-        this->m_length = 0;
-        this->m_step = 1;
-        this->m_current = NULL;
-    }
-
-
-    bool insert(int i, const T& e)
-    {
-        bool ret = true;
-        i = i % (this->m_length+1);
-
-        Node* node = this->create();
-        if (node != NULL)
+    protected:
+        struct Node : public Object
         {
-            Node* current = this->position(i);
-            Node* next = current->next;
+            list_head head;
+            T value;
+        };
 
-            node->value = e;
-            current->next = node;
-            node->next = next;
-            next->pre = node;
-            node->pre = current;
+        list_head m_header;
+        list_head* m_current;
 
-            this->m_length++;
-        }
-        else
+        list_head* position(int i) const
         {
-            THROW_EXCEPTION(NoEnoughMemoryException, "no memory to create new node for LinkList...");
-        }
-        return ret;
-    }
+            list_head* ret = const_cast<list_head*>(&m_header);
 
-    bool remove(int i)
-    {
-        bool ret = (this->m_length > 0);
+            for (int p = 0; p < i; p++)
+            {
+                ret = ret->next;
+            }
 
-        i = mod(i);
-        if (ret)
-        {
-            Node* current = this->position(i);
-            Node* delNode = current->next;
-            Node* next = delNode->next;
-
-            current->next = next;
-            next->pre = current;
-
-            this->m_length--;
-            this->destroy(delNode);
-
-        }
-
-        return ret;
-    }
-
-    bool set(int i, const T& e)
-    {
-        bool ret = (this->m_length > 0);
-
-        if (ret)
-        {
-            i = i % this->m_length+1;
-            this->position(i)->value = e;
-        }
-
-        return ret;
-    }
-
-    virtual bool get(int i, T& e) const
-    {
-        bool ret = (this->m_length > 0);
-
-        if (ret)
-        {
-            i = i % this->m_length+1;
-            e = this->position(i)->value;
-        }
-
-        return ret;
-    }
-
-    virtual T get(int i)
-    {
-        T ret;
-
-        if (get(i, ret))
-        {
             return ret;
         }
-        else
-        {
-            THROW_EXCEPTION(InvalidOperationException, "The DualCircleList has no elements...");
-        }
-        return ret;
-    }
 
-    int find(const T& e) const
-    {
-        int ret = -1;
-        Node* cur = this->m_head.next;
-        int i = 0;
-        while (cur != reinterpret_cast<Node*>(&(this->m_head)))
+        int mod(int i) const
         {
-            if (cur->value == e)
+            return (this->m_length == 0) ? 0 : (i % this->m_length);
+        }
+
+    public:
+        DualCircleList()
+        {
+            this->m_length = 0;
+            this->m_step = 1;
+
+            m_current = NULL;
+
+            INIT_LIST_HEAD(&m_header);
+        }
+
+        bool insert(const T& e)
+        {
+            return insert(this->m_length, e);
+        }
+
+        bool insert(int i, const T& e)
+        {
+            bool ret = true;
+            Node* node = new Node();
+
+            i = i % (this->m_length + 1);
+
+            if (node != NULL)
             {
-                ret = i;
-                break;
+                node->value = e;
+
+                list_add_tail(&node->head, position(i)->next);
+
+                this->m_length++;
             }
             else
             {
+                THROW_EXCEPTION(NoEnoughMemoryException, "No memory to insert new element ...");
+            }
+
+            return ret;
+        }
+
+        bool remove(int i)
+        {
+            bool ret = true;
+
+            i = mod(i);
+
+            ret = ((0 <= i) && (i < this->m_length));
+
+            if (ret)
+            {
+                list_head* toDel = position(i)->next;
+
+                if (m_current == toDel)
+                {
+                    m_current = toDel->next;
+                }
+
+                list_del(toDel);
+
+                this->m_length--;
+
+                delete list_entry(toDel, Node, head);
+            }
+
+            return ret;
+        }
+
+        bool set(int i, const T& e)
+        {
+            bool ret = true;
+
+            i = mod(i);
+
+            ret = ((0 <= i) && (i < this->m_length));
+
+            if (ret)
+            {
+                list_entry(position(i)->next, Node, head)->value = e;
+            }
+
+            return ret;
+        }
+
+        T get(int i) const
+        {
+            T ret;
+
+            if (get(i, ret))
+            {
+                return ret;
+            }
+            else
+            {
+                THROW_EXCEPTION(IndexOutOfBoundsException, "Invalid parameter i to get element ...");
+            }
+
+            return ret;
+        }
+
+        bool get(int i, T& e) const
+        {
+            bool ret = true;
+
+            i = mod(i);
+
+            ret = ((0 <= i) && (i < this->m_length));
+
+            if (ret)
+            {
+                e = list_entry(position(i)->next, Node, head)->value;
+            }
+
+            return ret;
+        }
+
+        int find(const T& e) const
+        {
+            int ret = -1;
+            int i = 0;
+            list_head* slider = NULL;
+
+            list_for_each(slider, &m_header)
+            {
+                if (list_entry(slider, Node, head)->value == e)
+                {
+                    ret = i;
+                    break;
+                }
+
                 i++;
-                cur = cur->next;
+            }
+
+            return ret;
+        }
+
+        int length() const
+        {
+            return this->m_length;
+        }
+
+        void clear()
+        {
+            while (this->m_length > 0)
+            {
+                remove(0);
             }
         }
 
-        return ret;
-    }
-
-
-
-    virtual bool move(int i, int step = 1)
-    {
-        i = i % (this->m_length);
-        bool ret =(step > 0);
-
-        if (ret)
+        bool move(int i, int step = 1)
         {
-            this->m_current = this->position(i)->next;
-            this->m_step = step;
+            bool ret = (step > 0);
+
+            i = mod(i);
+
+            ret = ret && ((0 <= i) && (i < this->m_length));
+
+            if (ret)
+            {
+                m_current = position(i)->next;
+
+                this->m_step = step;
+            }
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    virtual bool end()
-    {
-        return ((this->m_current == reinterpret_cast<Node*>(&(this->m_head))) || (this->m_current == NULL));
-    }
-
-    virtual T current()
-    {
-        if (!end())
+        bool end()
         {
-            return this->m_current->value;
-        }
-        else
-        {
-            THROW_EXCEPTION(InvalidOperationException, "No value at current position...");
-        }
-    }
-
-    virtual bool next()
-    {
-        int i = 0;
-        while ((i < this->m_step) && (!end()))
-        {
-            this->m_current = this->m_current->next;
-            i++;
+            return (m_current == NULL) || (this->m_length == 0);
         }
 
-        return (i == this->m_step);
-    }
-
-    virtual bool pre()
-    {
-        int i = 0;
-        while ((i < this->m_step) && (!end()))
+        T current()
         {
-            this->m_current = this->m_current->pre;
-            i++;
+            if (!end())
+            {
+                return list_entry(m_current, Node, head)->value;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No value at current position ...");
+            }
         }
 
-        return (i == this->m_step);
-    }
+        bool next()
+        {
+            int i = 0;
 
-    ~DualCircleList()
-    {
-        this->clear();
-    }
-};
+            while ((i < this->m_step) && !end())
+            {
+                if (m_current != &m_header)
+                {
+                    m_current = m_current->next;
+                    i++;
+                }
+                else
+                {
+                    m_current = m_current->next;
+                }
+            }
+
+            if (m_current == &m_header)
+            {
+                m_current = m_current->next;
+            }
+
+            return (i == this->m_step);
+        }
+
+        bool pre()
+        {
+            int i = 0;
+
+            while ((i < this->m_step) && !end())
+            {
+                if (m_current != &m_header)
+                {
+                    m_current = m_current->prev;
+                    i++;
+                }
+                else
+                {
+                    m_current = m_current->prev;
+                }
+            }
+
+            if (m_current == &m_header)
+            {
+                m_current = m_current->prev;
+            }
+
+            return (i == this->m_step);
+        }
+
+        ~DualCircleList()
+        {
+            clear();
+        }
+
+    };
 
 }

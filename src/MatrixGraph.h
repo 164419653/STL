@@ -1,266 +1,297 @@
 #pragma once
 
-#include"Graph.h"
-#include"Exception.h"
-#include"DynamicArray.h"
-
-#include<iostream>
-using namespace std;
+#include "Graph.h"
+#include "Exception.h"
+#include "DynamicArray.h"
 
 namespace JYLib
 {
 
-template <int N,typename V,typename E>
-class MatrixGraph : public Graph<V,E>
-{
-protected:
-    V* m_vertexes[N];
-    E* m_edges[N][N];
-    int m_eCount;
-
-public:
-    MatrixGraph()
+    template < int N, typename V, typename E >
+    class MatrixGraph : public Graph<V, E>
     {
-        for(int i=0;i<N;i++)
+    protected:
+        V* m_vertexes[N];
+        E* m_edges[N][N];
+        int m_eCount;
+    public:
+        MatrixGraph()
         {
-            m_vertexes[i] = NULL;
-            for(int j=0;j<N;j++)
+            for (int i = 0; i < vCount(); i++)
             {
-                m_edges[i][j] = NULL;
-            }
-        }
-        m_eCount = 0;
-    }
+                m_vertexes[i] = NULL;
 
-    V getVertex(int i)
-    {
-        V ret;
-
-        if(!getVertex(i,ret))
-        {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter i is invalid ...");
-        }
-
-        return ret;
-    }
-
-    bool getVertex(int i,V& value)
-    {
-        bool ret = (i >= 0) && (i < N);
-
-        if(ret)
-        {
-            if(m_vertexes[i] != NULL)
-            {
-                value = *m_vertexes[i];
-            }
-            else
-            {
-                THROW_EXCEPTION(InvalidParamterException,"No value assign at this vertex ...");
-            }
-        }
-        return ret;
-    }
-
-    bool setVertex(int i,const V& value)
-    {
-        bool ret = (i >= 0) && (i < N);
-
-        if(ret)
-        {
-            V* data = m_vertexes[i];
-            if(data == NULL)
-            {
-                data = new V();
-            }
-            if(data != NULL)
-            {
-                *data = value;
-
-                m_vertexes[i] = data;
-            }
-            else
-            {
-               THROW_EXCEPTION(NoEnoughMemoryException,"No enough memory to create new Vertex ...");
-            }
-        }
-
-        return ret;
-    }
-
-    SharedPointer<Array<int>> getAdjacent(int i)
-    {
-        DynamicArray<int>* ret = NULL;
-
-        if((i>=0)&&(i<N))
-        {
-            int n = OD(i);
-            ret = new DynamicArray<int>(n);
-            if(ret != NULL)
-            {
-                for(int j=0,k=0;j<N;j++)
+                for (int j = 0; j < vCount(); j++)
                 {
-                    if(m_edges[i][j] != NULL)
+                    m_edges[i][j] = NULL;
+                }
+            }
+
+            m_eCount = 0;
+        }
+
+        V getVertex(int i)  // O(1)
+        {
+            V ret;
+
+            if (!getVertex(i, ret))
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Index i is invalid ...");
+            }
+
+            return ret;
+        }
+
+        bool getVertex(int i, V& value)    // O(1)
+        {
+            bool ret = ((0 <= i) && (i < vCount()));
+
+            if (ret)
+            {
+                if (m_vertexes[i] != NULL)
+                {
+                    value = *(m_vertexes[i]);
+                }
+                else
+                {
+                    THROW_EXCEPTION(InvalidOperationException, "No value assigned to this vertex ...");
+                }
+            }
+
+            return ret;
+        }
+
+        bool setVertex(int i, const V& value)   // O(1)
+        {
+            bool ret = ((0 <= i) && (i < vCount()));
+
+            if (ret)
+            {
+                V* data = m_vertexes[i];
+
+                if (data == NULL)
+                {
+                    data = new V();
+                }
+
+                if (data != NULL)
+                {
+                    *data = value;
+
+                    m_vertexes[i] = data;
+                }
+                else
+                {
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to store new vertex value ...");
+                }
+
+            }
+
+            return ret;
+        }
+
+        SharedPointer< Array<int> > getAdjacent(int i)  // O(n)
+        {
+            DynamicArray<int>* ret = NULL;
+
+            if ((0 <= i) && (i < vCount()))
+            {
+                int n = 0;
+
+                for (int j = 0; j < vCount(); j++)
+                {
+                    if (m_edges[i][j] != NULL)
                     {
-                        ret->set(k++,j);
+                        n++;
+                    }
+                }
+
+                ret = new DynamicArray<int>(n);
+
+                if (ret != NULL)
+                {
+                    for (int j = 0, k = 0; j < vCount(); j++)
+                    {
+                        if (m_edges[i][j] != NULL)
+                        {
+                            ret->set(k++, j);
+                        }
+                    }
+                }
+                else
+                {
+                    THROW_EXCEPTION(NoEnoughMemoryException, "No memory to create ret object ...");
+                }
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Index i is invalid ...");
+            }
+
+            return ret;
+        }
+
+        bool isAdjacent(int i, int j)
+        {
+            return (0 <= i) && (i < vCount()) && (0 <= j) && (j < vCount()) && (m_edges[i][j] != NULL);
+        }
+
+        E getEdge(int i, int j)   // O(1)
+        {
+            E ret;
+
+            if (!getEdge(i, j, ret))
+            {
+                THROW_EXCEPTION(InvalidParameterException, "Index <i, j> is invalid ...");
+            }
+
+            return ret;
+        }
+
+        bool getEdge(int i, int j, E& value)   // O(1)
+        {
+            bool ret = ((0 <= i) && (i < vCount()) &&
+                (0 <= j) && (j < vCount()));
+
+            if (ret)
+            {
+                if (m_edges[i][j] != NULL)
+                {
+                    value = *(m_edges[i][j]);
+                }
+                else
+                {
+                    THROW_EXCEPTION(InvalidOperationException, "No value assigned to this edge ...");
+                }
+            }
+
+            return ret;
+        }
+
+        bool setEdge(int i, int j, const E& value)   // O(1)
+        {
+            bool ret = ((0 <= i) && (i < vCount()) &&
+                (0 <= j) && (j < vCount()));
+
+            if (ret)
+            {
+                E* ne = m_edges[i][j];
+
+                if (ne == NULL)
+                {
+                    ne = new E();
+
+                    if (ne != NULL)
+                    {
+                        *ne = value;
+
+                        m_edges[i][j] = ne;
+
+                        m_eCount++;
+                    }
+                    else
+                    {
+                        THROW_EXCEPTION(NoEnoughMemoryException, "No memory to store new edge value ...");
+                    }
+                }
+                else
+                {
+                    *ne = value;
+                }
+            }
+
+            return ret;
+        }
+
+        bool removeEdge(int i, int j)    // O(1)
+        {
+            bool ret = ((0 <= i) && (i < vCount()) &&
+                (0 <= j) && (j < vCount()));
+
+            if (ret)
+            {
+                E* toDel = m_edges[i][j];
+
+                m_edges[i][j] = NULL;
+
+                if (toDel != NULL)
+                {
+                    m_eCount--;
+
+                    delete toDel;
+                }
+            }
+
+            return ret;
+        }
+
+        int vCount()   // O(1)
+        {
+            return N;
+        }
+
+        int eCount()   // O(1)
+        {
+            return m_eCount;
+        }
+
+        int OD(int i)   // O(n)
+        {
+            int ret = 0;
+
+            if ((0 <= i) && (i < vCount()))
+            {
+                for (int j = 0; j < vCount(); j++)
+                {
+                    if (m_edges[i][j] != NULL)
+                    {
+                        ret++;
                     }
                 }
             }
             else
             {
-                THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new array ...");
+                THROW_EXCEPTION(InvalidParameterException, "Index i is invalid ...");
             }
-        }
-        else
-        {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter i is invalid ...");
+
+            return ret;
         }
 
-        return ret;
-    }
-    virtual E getEdge(int i,int j)
-    {
-        E ret;
-
-        if(!getEdge(i,j,ret))
+        int ID(int i)   // O(n)
         {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter i is invalid ...");
-        }
+            int ret = 0;
 
-        return ret;
-    }
-
-    virtual E getEdge(int i,int j,E& value)
-    {
-        bool ret = (i >= 0) && (i < N) && (j>=0) && (j<N);
-
-        if(ret)
-        {
-            if(m_edges[i][j] != NULL)
+            if ((0 <= i) && (i < vCount()))
             {
-                value = *m_edges[i][j];
-            }
-            else
-            {
-                THROW_EXCEPTION(InvalidParamterException,"No value assign at this edge ...");
-            }
-        }
-        return ret;
-    }
-
-    virtual bool setEdge(int i,int j,const E& value)
-    {
-        bool ret = (i >= 0) && (i < N) && (j>=0) && (j<N);
-
-        if(ret)
-        {
-            E* e = m_edges[i][j];
-            if(e == NULL)
-            {
-                e = new E();
-                if(e != NULL)
+                for (int j = 0; j < vCount(); j++)
                 {
-                    *e = value;
-                    m_edges[i][j] = e;
-                    m_eCount++;
-                }
-                else
-                {
-                    THROW_EXCEPTION(NoEnoughMemoryException,"No memory to create new edge ...");
+                    if (m_edges[j][i] != NULL)
+                    {
+                        ret++;
+                    }
                 }
             }
             else
             {
-                *e = value;
+                THROW_EXCEPTION(InvalidParameterException, "Index i is invalid ...");
             }
+
+            return ret;
         }
 
-        return ret;
-    }
-
-    bool removeEdge(int i,int j)
-    {
-        bool ret = (i >= 0) && (i < N) && (j>=0) && (j<N);
-
-        if(ret)
+        ~MatrixGraph()
         {
-            E* toDel = m_edges[i][j];
-            m_edges[i][j] = NULL;
-            if(toDel != NULL)
+            for (int i = 0; i < vCount(); i++)
             {
-                m_eCount--;
-
-                delete toDel;
-            }
-        }
-
-        return ret;
-    }
-
-    int vCount()
-    {
-        return  N;
-    }
-
-    int eCount()
-    {
-        return m_eCount;
-    }
-
-    int OD(int i)
-    {
-        int ret = 0;
-
-        if((i>=0)&&(i<N))
-        {
-            for(int j=0;j<N;j++)
-            {
-                if(m_edges[i][j] != NULL)
+                for (int j = 0; j < vCount(); j++)
                 {
-                    ret++;
+                    delete m_edges[i][j];
                 }
+
+                delete m_vertexes[i];
             }
         }
-        else
-        {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter i is invalid ...");
-        }
-        return ret;
-    }
+    };
 
-    int ID(int i)
-    {
-        int ret = 0;
-
-        if((i>=0)&&(i<N))
-        {
-            for(int j=0;j<N;j++)
-            {
-                if(m_edges[j][i] != NULL)
-                {
-                    ret++;
-                }
-            }
-        }
-        else
-        {
-            THROW_EXCEPTION(InvalidParamterException,"Parameter i is invalid ...");
-        }
-        return ret;
-    }
-
-
-    ~MatrixGraph()
-    {
-        for(int i=0;i<N;i++)
-        {
-            for(int j=0;j<N;j++)
-            {
-                delete m_edges[i][j];
-            }
-            delete m_vertexes[i];
-        }
-    }
-};
 
 }

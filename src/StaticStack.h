@@ -1,79 +1,79 @@
 #pragma once
 
-#include"Stack.h"
-#include"Exception.h"
+#include "Stack.h"
+#include "Exception.h"
 
 namespace JYLib
 {
 
-template <typename T,int N>
-class StaticStack : public Stack<T>
-{
-protected:
-    T m_space[N];
-    int m_top;
-    int m_size;
-public:
-public:
-    StaticStack()
+    template < typename T, int N >
+    class StaticStack : public Stack<T>
     {
-        m_top = -1;
-        m_size = 0;
-    }
-
-    void push(const T& e)
-    {
-        if(m_size < N)
+    protected:
+        T m_space[N];
+        int m_top;
+        int m_size;
+    public:
+        StaticStack()    // O(1)
         {
-            m_space[m_top+1] = e;
-            m_top++;
-            m_size++;
+            m_top = -1;
+            m_size = 0;
         }
-        else
-        {
-            THROW_EXCEPTION(NoEnoughMemoryException,"no space to push ...");
-        }
-    }
 
-    void pop()
-    {
-        if(m_size > 0)
+        int capacity() const  // O(1)
         {
-            m_size--;
-            m_top--;
+            return N;
         }
-        else
+
+        void push(const T& e)  // O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The StaticStack has no elements...");
+            if (m_size < N)
+            {
+                m_space[m_top + 1] = e;
+                m_top++;
+                m_size++;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No space in current stack ...");
+            }
         }
-    }
 
-    T top() const
-    {
-        if(m_size > 0)
+        void pop()   // O(1)
         {
-            return m_space[m_top];
+            if (m_size > 0)
+            {
+                m_top--;
+                m_size--;
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current stack ...");
+            }
         }
-        else
+
+        T top() const   // O(1)
         {
-            THROW_EXCEPTION(InvalidOperationException,"The StaticStack has no elements...");
+            if (m_size > 0)
+            {
+                return m_space[m_top];
+            }
+            else
+            {
+                THROW_EXCEPTION(InvalidOperationException, "No element in current stack ...");
+            }
         }
-    }
 
-    void clear()
-    {
-        m_size = 0;
-        m_top = -1;
-    }
+        void clear()   // O(1)
+        {
+            m_top = -1;
+            m_size = 0;
+        }
 
-    int size() const
-    {
-        return m_size;
-    }
+        int size() const  // O(1)
+        {
+            return m_size;
+        }
+    };
 
-    int capacity() const
-    {
-        return N;
-    }
-};
 }
